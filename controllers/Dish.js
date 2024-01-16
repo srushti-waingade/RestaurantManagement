@@ -186,7 +186,7 @@ bar.then(async () => {
 
     // If totalAmountCollected is null or undefined, set it to 0
     const currentTotal = totalAmountCollected ? parseFloat(totalAmountCollected) : 0;
-    await redisClient.set('totalAmountCollected Lesssgo', (currentTotal + totalAmount));
+    await redisClient.set('totalAmountCollected', (currentTotal + totalAmount));
 
     return res.json({message:"No change to be given"});
   }
