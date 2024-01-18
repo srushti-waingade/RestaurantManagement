@@ -16,8 +16,4 @@ router.put("/dishes/:dishName",authenticateToken, updateDish);
 router.delete("/dishes/:dishName",authenticateToken, deleteDish);
 
 
-    
-
-
-
 module.exports = router;

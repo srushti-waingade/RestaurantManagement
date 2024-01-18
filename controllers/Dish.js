@@ -29,7 +29,7 @@ const createDish = (req, res) => {
     }
   } else { 
     console.log("Dish inserted successfully");
-    return res.status(200).message({message:"dish added"})
+    return res.status(200).json({message:"dish added"})
     
     }
   });
@@ -65,7 +65,7 @@ const getOneDish = async (req, res) => {
     return res.json({err});
   }
   else{
-   return res.json({dish});
+   return res.status(200).json({dish});
   }
 
 });
@@ -111,7 +111,7 @@ const updateDish = (req, res) => {
   });
   } else{
     console.log("dishnames donot match")
-    return res.status(413).json({message : "dishnames donot match"})
+    return res.status(412).json({message : "dishnames donot match"})
   }
 };
 
@@ -119,12 +119,23 @@ const updateDish = (req, res) => {
 //delete
 const deleteDish = (req, res) => {
   const dishname= req.params.dishName.toLowerCase();
+  //check if the dish exists in the database
+  Dish.findOne({ dishName: dishname }, (err, existingDish) => {
+    if (err) {
+      return res.send({err});
+    }
+    if (!existingDish) {
+      return res.status(412).json({ error: "Dish does not exist" });
+    }
+    else{
   Dish.deleteOne({ dishName: dishname })
     .then(() => {
       console.log("Dish Deleted");
       res.status(200).json({ message: "Dish Deleted" });
     })
-    .catch((err) => res.send({err}));
+    .catch((err) => res.status(412).json({err}));
+    }
+})
 };
 
 
@@ -137,24 +148,22 @@ const purchaseDishes =  async (req, res,) =>{
       const dishname=dish.dish.toLowerCase();
       await Dish.findOne({dishName:dishname}).then((existingdish)=>{
         if(!existingdish){
-          return res.json({message:"dish doesnot exist in db"})
+          return res.status(412).json({message:"dish doesnot exist in db"})
         }else{
-        if(dish.qty<1){
-          console.log("quantity should be atleast one for purchase");
-          return reject({message:"quantity should be atleast one for purchase"})
-        }
-        else if(existingdish.availableQuantity<dish.qty){
-          console.log("enough quanity not available");
-          return reject({message:"not enough quantity available"});
-        }
-        else{
-          console.log("inside else");
-          //const dishprice = await Dish.findOne({dishName: dish.dish}).exec();
-          let dishprice = parseInt((dish.qty)*(existingdish.dishPrice));
-          totalAmount += dishprice;
-        }
+          if(dish.qty<1){
+            console.log("quantity should be atleast one for purchase");
+            return reject({message:"quantity should be atleast one for purchase"});
+          }
+          else if(existingdish.availableQuantity<dish.qty){
+            console.log("enough quanity not available");
+            return reject({message:"enough quantity not available"});
+          }
+          else{
+            let dishprice = parseInt((dish.qty)*(existingdish.dishPrice));
+            totalAmount += dishprice;
+          }
 
-      }
+        }
       console.log({totalAmount});
       }).catch((err)=>{
        
@@ -162,7 +171,6 @@ const purchaseDishes =  async (req, res,) =>{
         });
     }
     return resolve();
-
 });
 
 bar.then(async () => {
@@ -188,7 +196,7 @@ bar.then(async () => {
     const currentTotal = totalAmountCollected ? parseFloat(totalAmountCollected) : 0;
     await redisClient.set('totalAmountCollected', (currentTotal + totalAmount));
 
-    return res.json({message:"No change to be given"});
+    return res.status(200).json({message:"No change to be given"});
   }
   
   if(totalAmount<req.body.givenAmount){
@@ -212,7 +220,9 @@ bar.then(async () => {
     return res.status(200).send({message:"change to be given :"+change})
   }
  
-}).catch((err)=>{return res.send({err})});
+  }).catch((err)=>{
+  return res.status(412);
+  });
 
 }
 
